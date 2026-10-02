@@ -1,0 +1,16 @@
+# Remaining CVEs: versions pinned by Caddy v2.11.4's go.mod (xcaddy --replace has no effect).
+# Re-review at expiry or when a new Caddy release bumps these modules.
+
+# x/crypto SSH auth bypass: Caddy does not expose an SSH server.
+CVE-2026-56854 exp:2026-12-31
+
+# grpc xDS/RBAC/HTTP2: not reachable without gRPC reverse_proxy or xDS.
+CVE-2026-84304 exp:2026-12-31
+CVE-2026-84445 exp:2026-12-31
+GHSA-hrxh-6v49-42gf exp:2026-12-31
+
+# x/net DNS parsing DoS: narrow surface (ACME challenge DNS), availability only.
+CVE-2026-46600 exp:2026-12-31
+
+# x/text invalid UTF-8 DoS: availability only.
+CVE-2026-56852 exp:2026-12-31
