@@ -7,6 +7,8 @@
 [![Image size](https://ghcr-badge.egpl.dev/a-belhadj/caddy-cloudflare/size?tag=latest)](https://github.com/a-belhadj/caddy-cloudflare/pkgs/container/caddy-cloudflare)
 [![Latest tag](https://ghcr-badge.egpl.dev/a-belhadj/caddy-cloudflare/latest_tag?label=latest)](https://github.com/a-belhadj/caddy-cloudflare/pkgs/container/caddy-cloudflare)
 
+**Image:** [`ghcr.io/a-belhadj/caddy-cloudflare`](https://github.com/a-belhadj/caddy-cloudflare/pkgs/container/caddy-cloudflare)
+
 ## Why this image
 
 The official `ghcr.io/caddy-dns/cloudflare` image is no longer published (since March 2026). Its frozen Go toolchain (1.26.1) and base layers carry **~70 HIGH/CRITICAL CVEs** (Go stdlib, `x/crypto`, OpenSSL/musl).
