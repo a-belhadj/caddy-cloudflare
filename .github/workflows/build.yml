@@ -79,7 +79,6 @@ jobs:
             type=semver,pattern={{version}},value=${{ steps.ver.outputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.ver.outputs.version }}
             type=semver,pattern={{major}},value=${{ steps.ver.outputs.version }}
-            type=raw,value=${{ steps.ver.outputs.version }}-{{date 'YYYYMMDD'}}
             type=sha
 
       - name: Login to GHCR

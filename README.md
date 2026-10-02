@@ -90,8 +90,9 @@ COPY dist/ /srv/
 |-----|---------|
 | `latest` | Most recent build |
 | `2`, `2.11`, `2.11.4` | Caddy major / minor / exact version (moving: re-pushed by each weekly rebuild) |
-| `2.11.4-YYYYMMDD` | Immutable per-build tag — pin this for reproducible deployments / rollback |
 | `sha-<short>` | Git commit that produced the build |
+
+For reproducible deployments, pin the image by digest (`@sha256:…`).
 
 The image is rebuilt **every Monday 04:00 UTC** (without layer cache, on fresh `caddy:2` / `caddy:2-builder`), on every push to `main`, on `v*` tags and on manual dispatch. Pull requests build and scan but never push. Images ship with SBOM and provenance attestations.
 
