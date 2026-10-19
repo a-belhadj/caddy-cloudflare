@@ -62,6 +62,31 @@ jobs:
           output: trivy.sarif
           limit-severities-for-sarif: true
 
+      - name: CVE report in job summary
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: caddy-cf:scan
+          severity: HIGH,CRITICAL
+          trivyignores: .trivyignore
+          format: table
+          output: trivy.txt
+          skip-setup-trivy: true
+
+      - name: Publish CVE report
+        if: always() && hashFiles('trivy.txt') != ''
+        run: |
+          { echo '## Trivy (HIGH/CRITICAL, after .trivyignore)'; echo '```'; cat trivy.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate SBOM (CycloneDX)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: caddy-cf:scan
+          format: cyclonedx
+          output: sbom.cdx.json
+          skip-setup-trivy: true
+
       - name: Upload SARIF
         if: always() && github.event_name != 'pull_request' && hashFiles('trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
@@ -113,3 +138,19 @@ jobs:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      - name: Attest SBOM
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: sbom.cdx.json
+          push-to-registry: true
+
+      - name: Upload SBOM artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: sbom.cdx.json
