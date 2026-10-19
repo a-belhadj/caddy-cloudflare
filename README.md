@@ -126,7 +126,7 @@ trivy image --severity HIGH,CRITICAL ghcr.io/a-belhadj/caddy-cloudflare:2
 
 ## Known CVEs
 
-This image is the official Caddy plus the Cloudflare plugin: Go dependencies are whatever Caddy's own `go.mod` pins, and they cannot be overridden here. Scanners may therefore flag some of them until Caddy bumps them. The build never fails on CVEs: the count is in the badge above, and the full list is in the summary of each [workflow run](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml) and in the [Security tab](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning).
+This image is the official Caddy plus the Cloudflare plugin: Go dependencies are whatever Caddy's own `go.mod` pins, and they cannot be overridden here. Scanners may therefore flag some of them until Caddy bumps them. The build never fails on CVEs. The badge above compares the official `caddy:2` (this image's base) with this image, and each [workflow run](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml) summary shows both scans side by side, plus any CVE added versus the official image. The full list is in the summary of each run and in the [Security tab](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning).
 
 ## Verify the plugin
 

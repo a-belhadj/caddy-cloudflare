@@ -70,15 +70,42 @@ jobs:
           output: trivy.json
           skip-setup-trivy: true
 
+      # Reference: the official image this one is built from (`FROM caddy:2`).
+      - name: Pull official caddy:2
+        run: docker pull caddy:2
+
+      - name: Trivy scan official image (JSON)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: caddy:2
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-official.json
+          skip-setup-trivy: true
+
       - name: Publish CVE report and badge data
         run: |
-          trivy convert --format table trivy.json > trivy.txt
-          { echo '## Trivy (HIGH/CRITICAL)'; echo '```'; cat trivy.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          jq '[.Results[]?.Vulnerabilities[]?.Severity] as $s
-              | ($s | map(select(. == "CRITICAL")) | length) as $c
-              | ($s | map(select(. == "HIGH")) | length) as $h
-              | {schemaVersion: 1, label: "CVE", message: (if $c + $h == 0 then "0" else "\($c) critical, \($h) high" end),
-                  color: (if $c > 0 then "red" elif $h > 0 then "orange" else "brightgreen" end)}' trivy.json > badge.json
+          ids() { jq -r '[.Results[]?.Vulnerabilities[]?.VulnerabilityID] | unique[]' "$1"; }
+          count() { jq --arg s "$2" '[.Results[]?.Vulnerabilities[]? | select(.Severity == $s) | .VulnerabilityID] | unique | length' "$1"; }
+          oc=$(count trivy-official.json CRITICAL); oh=$(count trivy-official.json HIGH)
+          mc=$(count trivy.json CRITICAL);          mh=$(count trivy.json HIGH)
+          added=$(comm -13 <(ids trivy-official.json) <(ids trivy.json))
+          {
+            echo '## CVE: official `caddy:2` vs this image (HIGH/CRITICAL)'
+            echo '| | official `caddy:2` | this image |'
+            echo '|---|---|---|'
+            echo "| CRITICAL | $oc | $mc |"
+            echo "| HIGH | $oh | $mh |"
+            echo
+            echo "**CVE added by this image vs official:** ${added:-none}"
+            echo
+            echo '<details><summary>Official caddy:2</summary>'; echo; echo '```'; trivy convert --format table trivy-official.json; echo '```'; echo '</details>'
+            echo
+            echo '<details open><summary>This image</summary>'; echo; echo '```'; trivy convert --format table trivy.json; echo '```'; echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+          jq -n --argjson o "$((oc+oh))" --argjson m "$((mc+mh))" --argjson mc "$mc" \
+            '{schemaVersion: 1, label: "CVE official → this image", message: "\($o) → \($m)",
+              color: (if $m == 0 then "brightgreen" elif $mc > 0 or $m > $o then "red" else "orange" end)}' > badge.json
           cat badge.json
 
       # Orphan branch, force-pushed: keeps main free of generated commits.
