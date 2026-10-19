@@ -12,5 +12,8 @@ GHSA-hrxh-6v49-42gf exp:2026-12-31
 # x/net DNS parsing DoS: narrow surface (ACME challenge DNS), availability only.
 CVE-2026-46600 exp:2026-12-31
 
+# x/net HTTP/2 SETTINGS flood DoS: fixed in v0.60.0, Caddy v2.11.7 still pins v0.59.0. Availability only.
+CVE-2026-78669 exp:2026-12-31
+
 # x/text invalid UTF-8 DoS: availability only.
 CVE-2026-56852 exp:2026-12-31
