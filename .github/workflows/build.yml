@@ -23,7 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # badges branch
       packages: write
       security-events: write
       id-token: write
@@ -51,32 +51,47 @@ jobs:
           [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "bad version: $v"; exit 1; }
           echo "version=$v" >> "$GITHUB_OUTPUT"
 
-      - name: Trivy scan (blocking on HIGH/CRITICAL)
+      # Never blocks: the image is Caddy + the Cloudflare plugin, Go deps are whatever Caddy pins.
+      - name: Trivy scan (SARIF)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: caddy-cf:scan
           severity: HIGH,CRITICAL
-          exit-code: "1"
-          trivyignores: .trivyignore
           format: sarif
           output: trivy.sarif
           limit-severities-for-sarif: true
 
-      - name: CVE report in job summary
-        if: always()
+      - name: Trivy scan (JSON)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: caddy-cf:scan
           severity: HIGH,CRITICAL
-          trivyignores: .trivyignore
-          format: table
-          output: trivy.txt
+          format: json
+          output: trivy.json
           skip-setup-trivy: true
 
-      - name: Publish CVE report
-        if: always() && hashFiles('trivy.txt') != ''
+      - name: Publish CVE report and badge data
         run: |
-          { echo '## Trivy (HIGH/CRITICAL, after .trivyignore)'; echo '```'; cat trivy.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          trivy convert --format table trivy.json > trivy.txt
+          { echo '## Trivy (HIGH/CRITICAL)'; echo '```'; cat trivy.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          jq '[.Results[]?.Vulnerabilities[]?.Severity] as $s
+              | ($s | map(select(. == "CRITICAL")) | length) as $c
+              | ($s | map(select(. == "HIGH")) | length) as $h
+              | {schemaVersion: 1, label: "CVE", message: (if $c + $h == 0 then "0" else "\($c) critical, \($h) high" end),
+                  color: (if $c > 0 then "red" elif $h > 0 then "orange" else "brightgreen" end)}' trivy.json > badge.json
+          cat badge.json
+
+      # Orphan branch, force-pushed: keeps main free of generated commits.
+      - name: Publish CVE badge
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          d=$(mktemp -d); cp badge.json "$d"; cd "$d"
+          git init -q -b badges
+          git add badge.json
+          git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -qm "CVE badge"
+          git push -f "https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}" badges
 
       - name: Generate SBOM (CycloneDX)
         if: github.event_name != 'pull_request'
@@ -88,7 +103,7 @@ jobs:
           skip-setup-trivy: true
 
       - name: Upload SARIF
-        if: always() && github.event_name != 'pull_request' && hashFiles('trivy.sarif') != ''
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           sarif_file: trivy.sarif

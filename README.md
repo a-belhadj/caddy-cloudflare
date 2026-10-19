@@ -4,6 +4,9 @@
 
 [![build](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml/badge.svg)](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml)
 [![Trivy](https://img.shields.io/badge/scanned%20by-Trivy-1904DA)](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning)
+[![CVE](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/a-belhadj/caddy-cloudflare/badges/badge.json)](#known-cves)
+[![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-4B8BBE)](#security--sbom)
+[![Provenance](https://img.shields.io/badge/provenance-attested-2EA44F)](#verify-the-image)
 [![Image size](https://ghcr-badge.egpl.dev/a-belhadj/caddy-cloudflare/size?tag=latest)](https://github.com/a-belhadj/caddy-cloudflare/pkgs/container/caddy-cloudflare)
 [![Latest tag](https://ghcr-badge.egpl.dev/a-belhadj/caddy-cloudflare/latest_tag?label=latest)](https://github.com/a-belhadj/caddy-cloudflare/pkgs/container/caddy-cloudflare)
 
@@ -13,7 +16,7 @@
 
 The official `ghcr.io/caddy-dns/cloudflare` image is no longer published (since March 2026). Its frozen Go toolchain (1.26.1) and base layers carry **~70 HIGH/CRITICAL CVEs** (Go stdlib, `x/crypto`, OpenSSL/musl).
 
-This image compiles the up-to-date plugin with `xcaddy` on the current official builder and runs `apk upgrade` on the final image. It is **rebuilt every week**, scanned with Trivy, and only pushed if the scan passes. Result: **~70 → 7 CVEs**, all 7 justified in [`.trivyignore`](.trivyignore).
+This image compiles the up-to-date plugin with `xcaddy` on the current official builder and runs `apk upgrade` on the final image. It is **rebuilt every week**, scanned with Trivy (the CVE badge above is updated by each run). Result: **~70 → only the CVEs shipped by Caddy itself** (see [Known CVEs](#known-cves)).
 
 ## Quick start
 
@@ -89,7 +92,7 @@ COPY dist/ /srv/
 | Tag | Meaning |
 |-----|---------|
 | `latest` | Most recent build |
-| `2`, `2.11`, `2.11.7` | Caddy major / minor / exact version (moving: re-pushed by each weekly rebuild) |
+| `2`, `2.11`, `2.11.<patch>` | Caddy major / minor / exact version (moving: re-pushed by each weekly rebuild) |
 | `sha-<short>` | Git commit that produced the build |
 
 For reproducible deployments, pin the image by digest (`@sha256:…`).
@@ -106,7 +109,7 @@ gh attestation verify oci://ghcr.io/a-belhadj/caddy-cloudflare:2 --owner a-belha
 
 ## Security & SBOM
 
-- **CVE scan:** each run's summary page shows the Trivy report ([workflow runs](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml)); alerts are in the [Security tab](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning).
+- **CVE scan:** each run's summary page shows the full Trivy report, ignored CVEs included ([workflow runs](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml)); alerts are in the [Security tab](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning).
 - **SBOM:** a CycloneDX SBOM is attached to every pushed image as a signed attestation, and as the `sbom` artifact of each run.
 
 ```sh
@@ -118,12 +121,12 @@ gh attestation verify oci://ghcr.io/a-belhadj/caddy-cloudflare:2 --owner a-belha
 docker buildx imagetools inspect ghcr.io/a-belhadj/caddy-cloudflare:2 --format '{{ json .SBOM }}'
 
 # Scan it yourself
-trivy image --severity HIGH,CRITICAL --ignorefile .trivyignore ghcr.io/a-belhadj/caddy-cloudflare:2
+trivy image --severity HIGH,CRITICAL ghcr.io/a-belhadj/caddy-cloudflare:2
 ```
 
 ## Known CVEs
 
-Seven advisories remain because they are pinned by Caddy's own `go.mod` and cannot be overridden. Each one is documented with a justification and an expiry date (`2026-12-31`) in [`.trivyignore`](.trivyignore). See [Security & SBOM](#security--sbom) for the scan results.
+This image is the official Caddy plus the Cloudflare plugin: Go dependencies are whatever Caddy's own `go.mod` pins, and they cannot be overridden here. Scanners may therefore flag some of them until Caddy bumps them. The build never fails on CVEs: the count is in the badge above, and the full list is in the summary of each [workflow run](https://github.com/a-belhadj/caddy-cloudflare/actions/workflows/build.yml) and in the [Security tab](https://github.com/a-belhadj/caddy-cloudflare/security/code-scanning).
 
 ## Verify the plugin
 
