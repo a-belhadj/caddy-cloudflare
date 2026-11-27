@@ -83,6 +83,14 @@ jobs:
           output: trivy-official.json
           skip-setup-trivy: true
 
+      - name: Check Dockerfile --replace pin is still needed
+        run: |
+          # Official image no longer flags x/net => Caddy caught up. Warning only: publication must not stop.
+          n=$(jq '[.Results[]?.Vulnerabilities[]? | select(.PkgName == "golang.org/x/net")] | length' trivy-official.json)
+          if [ "$n" -eq 0 ]; then
+            echo "::warning::caddy:2 no longer ships a vulnerable x/net: remove the --replace pin in the Dockerfile"
+          fi
+
       - name: Publish CVE report and badge data
         run: |
           ids() { jq -r '[.Results[]?.Vulnerabilities[]?.VulnerabilityID] | unique[]' "$1"; }
